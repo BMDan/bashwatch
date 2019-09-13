@@ -1,32 +1,30 @@
 #!/bin/bash
+function watch() {
+  [[ -z "${REPEAT}" || "${REPEAT}" =~ [^0-9.] ]] && REPEAT="1.0"
+  local PREFIX="Every $REPEAT seconds: '"
+  local SUFFIX="'" 
 
-[[ -z "${REPEAT}" || "${REPEAT}" =~ [^0-9.] ]] && REPEAT="1.0"
-PREFIX="Every $REPEAT seconds: '"
-SUFFIX="'" 
+  STARTTIME=$(date +"%s")
 
-STARTTIME=$(date +"%s")
-
-while [ true ]; do
+  while true; do
     clear
 
+    local COLS
     COLS=$(tput cols)
-    ARGS="$*"
-    RUNNINGSTATLENGTH=$((${#PREFIX}+${#ARGS}+${#SUFFIX}))
-    if [ $COLS -ge $RUNNINGSTATLENGTH ]; then
-	echo -n "$PREFIX"
-	echo -ne '\033[0;36m'
-	echo -n "$@"
-	echo -ne '\033[0;0m'
-	echo -n "$SUFFIX"
+    local ARGS="$*"
+    local RUNNINGSTATLENGTH=$((${#PREFIX}+${#ARGS}+${#SUFFIX}))
+    if [ "$COLS" -ge $RUNNINGSTATLENGTH ]; then
+      echo -n "${PREFIX}$(tput setaf 6)${*}$(tput sgr0)${SUFFIX}"
 
-	RUNTIME="($(($(date +"%s")-$STARTTIME))s since invocation)"
-	if [ $COLS -ge $(($RUNNINGSTATLENGTH+${#RUNTIME}+3)) ]; then
-	    printf "%$(($COLS-$RUNNINGSTATLENGTH))s\\n" "$RUNTIME"
-	else
-	    echo
-	fi
+      RUNTIME="($(($(date +"%s")-STARTTIME))s since invocation)"
+      if [ "$COLS" -ge $((RUNNINGSTATLENGTH+${#RUNTIME}+3)) ]; then
+        printf "%*s\\n" $((COLS-RUNNINGSTATLENGTH)) "$RUNTIME"
+      else
+        echo
+      fi
     fi
     
-    sh -c "$*"
+    "$SHELL" -c "$*"
     sleep $REPEAT
-done
+  done
+}
